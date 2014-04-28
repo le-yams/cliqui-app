@@ -15,6 +15,7 @@
  */
 package com.mytdev.cliqui.ui;
 
+import com.mytdev.cliqui.App;
 import com.mytdev.cliqui.model.CLIEntryRepository;
 import com.mytdev.cliqui.util.ValidatingFileChooser;
 import java.awt.event.ActionEvent;
@@ -76,6 +77,7 @@ public class ImportCLIDialog extends javax.swing.JDialog {
         final ActionMap actionMap = getRootPane().getActionMap();
         actionMap.put(cancelName, cancelAction);
         fileChooser.setMultiSelectionEnabled(false);
+        fileChooser.addChoosableFileFilter(new FileNameExtensionFilter("JSON files", "json"));
         fileChooser.setFileFilter(new FileNameExtensionFilter("CLIQUI files", "cliqui"));
         final DocumentListener validationDocumentListener = new DocumentListener() {
 
@@ -118,10 +120,19 @@ public class ImportCLIDialog extends javax.swing.JDialog {
     public File getSelectedFile() {
         return selectedFile;
     }
+    
+    public boolean isOpenPanelSelected() {
+        return openPanelCheckBox.isSelected();
+    }
 
     private boolean isInputValid() {
-        if (nameField.getText().isEmpty()) {
+        final String name = nameField.getText();
+        if (name.isEmpty()) {
             messageLabel.setText("name is empty");
+            return false;
+        }
+        if(App.CLI_ENTRY_REPOSITORY.getEntryNames().contains(name)) {
+            messageLabel.setText("name already used");
             return false;
         }
         if (selectedFile == null) {
@@ -161,6 +172,7 @@ public class ImportCLIDialog extends javax.swing.JDialog {
         browseButton = new javax.swing.JButton();
         fileField = new javax.swing.JTextField();
         messageLabel = new javax.swing.JLabel();
+        openPanelCheckBox = new javax.swing.JCheckBox();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.DO_NOTHING_ON_CLOSE);
         setTitle("Import");
@@ -195,6 +207,9 @@ public class ImportCLIDialog extends javax.swing.JDialog {
         messageLabel.setForeground(new java.awt.Color(255, 0, 0));
         messageLabel.setText(" ");
 
+        openPanelCheckBox.setText("open panel");
+        openPanelCheckBox.setToolTipText("Open the assciated panel once imported");
+
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
@@ -204,7 +219,8 @@ public class ImportCLIDialog extends javax.swing.JDialog {
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addComponent(messageLabel, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                     .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
-                        .addGap(0, 229, Short.MAX_VALUE)
+                        .addComponent(openPanelCheckBox)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                         .addComponent(okButton, javax.swing.GroupLayout.PREFERRED_SIZE, 67, javax.swing.GroupLayout.PREFERRED_SIZE)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                         .addComponent(cancelButton))
@@ -242,7 +258,8 @@ public class ImportCLIDialog extends javax.swing.JDialog {
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(cancelButton)
-                    .addComponent(okButton))
+                    .addComponent(okButton)
+                    .addComponent(openPanelCheckBox))
                 .addContainerGap())
         );
 
@@ -266,6 +283,9 @@ public class ImportCLIDialog extends javax.swing.JDialog {
         if (fileChooser.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
             selectedFile = fileChooser.getSelectedFile();
             fileField.setText(selectedFile.getAbsolutePath());
+            if(nameField.getText().isEmpty()) {
+                nameField.setText(selectedFile.getName().replaceAll("\\.\\w+$", ""));
+            }
         }
     }//GEN-LAST:event_browseButtonActionPerformed
 
@@ -284,6 +304,7 @@ public class ImportCLIDialog extends javax.swing.JDialog {
     private javax.swing.JTextField nameField;
     private javax.swing.JLabel nameLabel;
     private javax.swing.JButton okButton;
+    private javax.swing.JCheckBox openPanelCheckBox;
     // End of variables declaration//GEN-END:variables
 
 }

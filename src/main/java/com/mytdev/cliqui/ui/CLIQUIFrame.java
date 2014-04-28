@@ -29,7 +29,6 @@ import javax.swing.Action;
 import javax.swing.ImageIcon;
 import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
-import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
 import javax.swing.SwingUtilities;
 import lombok.extern.slf4j.Slf4j;
@@ -56,16 +55,30 @@ public class CLIQUIFrame extends javax.swing.JFrame {
         setLocationRelativeTo(null);
         this.cliEntryRepository = cliEntryRepository;
         try {
+            cliEntryRepository.load();
             for (CLIEntry entry : cliEntryRepository.getEntries()) {
                 cliListModel.addEntry(entry);
             }
         } catch (IOException ex) {
             log.error(ex.getLocalizedMessage(), ex);
             JOptionPane.showMessageDialog(CLIQUIFrame.this,
-                    ex.getLocalizedMessage(),
-                    "Error loading data",
-                    JOptionPane.ERROR_MESSAGE);
+                ex.getLocalizedMessage(),
+                "Error loading user defined UIs",
+                JOptionPane.ERROR_MESSAGE);
         }
+    }
+
+    private void openCLIEntryPanel(CLIEntry entry) {
+        final String name = entry.getName();
+        CLIQUIPanel panel = panels.get(name);
+        if (panel == null) {
+            panel = new CLIQUIPanel(entry.getCli());
+            panels.put(name, panel);
+            tabbedPane.addTab(name, panel);
+            final int index = tabbedPane.indexOfComponent(panel);
+            tabbedPane.setTabComponentAt(index, new ButtonTabComponent(tabbedPane));
+        }
+        tabbedPane.setSelectedComponent(panel);
     }
 
     private final class ExitAction extends AbstractAction {
@@ -85,8 +98,8 @@ public class CLIQUIFrame extends javax.swing.JFrame {
     private final class ImportCLIAction extends AbstractAction {
 
         public ImportCLIAction() {
-            super("Import frontend", new ImageIcon(Images.IMPORT));
-            putValue(SHORT_DESCRIPTION, "Import frontend from CLI definition file");
+            super("Import UI", new ImageIcon(Images.IMPORT));
+            putValue(SHORT_DESCRIPTION, "Import CLI Quick UI definition file");
         }
 
         @Override
@@ -99,12 +112,15 @@ public class CLIQUIFrame extends javax.swing.JFrame {
                 try {
                     final CLIEntry entry = cliEntryRepository.importFile(name, file);
                     cliListModel.addEntry(entry);
+                    if(dialog.isOpenPanelSelected()) {
+                        openCLIEntryPanel(entry);
+                    }
                 } catch (IOException ex) {
                     log.error(ex.getLocalizedMessage(), ex);
                     JOptionPane.showMessageDialog(CLIQUIFrame.this,
-                            ex.getLocalizedMessage(),
-                            "Error importing file",
-                            JOptionPane.ERROR_MESSAGE);
+                        ex.getLocalizedMessage(),
+                        "Error importing file",
+                        JOptionPane.ERROR_MESSAGE);
                 }
             }
         }
@@ -128,9 +144,9 @@ public class CLIQUIFrame extends javax.swing.JFrame {
             try {
                 final String entryName = entry.getName();
                 JOptionPane.showConfirmDialog(CLIQUIFrame.this,
-                        "delete entry " + entryName + "?",
-                        "confirmation",
-                        JOptionPane.YES_NO_OPTION);
+                    "delete entry " + entryName + "?",
+                    "confirmation",
+                    JOptionPane.YES_NO_OPTION);
                 if (cliEntryRepository.removeEntry(entryName)) {
                     cliListModel.removeEntry(index);
                     final CLIQUIPanel panel = panels.get(entryName);
@@ -141,9 +157,9 @@ public class CLIQUIFrame extends javax.swing.JFrame {
             } catch (IOException ex) {
                 log.error(ex.getLocalizedMessage(), ex);
                 JOptionPane.showMessageDialog(CLIQUIFrame.this,
-                        ex.getLocalizedMessage(),
-                        "Error deleting file",
-                        JOptionPane.ERROR_MESSAGE);
+                    ex.getLocalizedMessage(),
+                    "Error deleting file",
+                    JOptionPane.ERROR_MESSAGE);
             }
 
         }
@@ -261,16 +277,7 @@ public class CLIQUIFrame extends javax.swing.JFrame {
     private void cliListMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_cliListMouseClicked
         final CLIEntry entry = cliList.getSelectedValue();
         if (entry != null && evt.getClickCount() == 2 && SwingUtilities.isLeftMouseButton(evt)) {
-            final String name = entry.getName();
-            CLIQUIPanel panel = panels.get(name);
-            if (panel == null) {
-                panel = new CLIQUIPanel(entry.getCli());
-                panels.put(name, panel);
-                tabbedPane.addTab(name, panel);
-                final int index = tabbedPane.indexOfComponent(panel);
-                tabbedPane.setTabComponentAt(index, new ButtonTabComponent(tabbedPane));
-            }
-            tabbedPane.setSelectedComponent(panel);
+            openCLIEntryPanel(entry);
         }
     }//GEN-LAST:event_cliListMouseClicked
 

@@ -15,9 +15,6 @@
  */
 package com.mytdev.cliqui;
 
-//import com.mytdev.cliqui.CLIQUI;
-//import static com.mytdev.cliqui.CLIQUI.*;
-//import com.mytdev.cliqui.beans.PathSelectionMode;
 import com.mytdev.cliqui.model.CLIEntryRepository;
 import com.mytdev.cliqui.ui.CLIQUIFrame;
 import java.nio.file.Path;
@@ -27,7 +24,12 @@ import java.nio.file.Paths;
  *
  * @author Yann D'Isanto
  */
-public class Main {
+public final class App {
+
+    private static final Path CLI_REPOSITORY_FOLDER = Paths.get(
+        System.getProperty("user.home"), ".cliqui", "clis");
+
+    public static final CLIEntryRepository CLI_ENTRY_REPOSITORY = new CLIEntryRepository(CLI_REPOSITORY_FOLDER);
 
     /**
      * @param args the command line arguments
@@ -54,14 +56,11 @@ public class Main {
         }
         //</editor-fold>
 
-        final String userHome = System.getProperty("user.home");
-        final Path cliRepositoryFolder = Paths.get(userHome, ".cliqui", "clis");
-        
         /* Create and display the form */
         java.awt.EventQueue.invokeLater(new Runnable() {
             @Override
             public void run() {
-                new CLIQUIFrame(new CLIEntryRepository(cliRepositoryFolder)).setVisible(true);
+                new CLIQUIFrame(CLI_ENTRY_REPOSITORY).setVisible(true);
             }
         });
     }

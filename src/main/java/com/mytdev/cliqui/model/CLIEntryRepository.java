@@ -26,6 +26,7 @@ import java.nio.file.Path;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
 /**
  *
@@ -53,16 +54,24 @@ public final class CLIEntryRepository {
         return entry;
     }
     
-    public Collection<CLIEntry> getEntries() throws IOException {
-        if(loaded == false) {
-            load();
-        }
+    public Set<String> getEntryNames() {
+        return cache.keySet();
+    }
+    
+    public Collection<CLIEntry> getEntries() {
         return cache.values();
     }
     
     public boolean removeEntry(String name) throws IOException {
+        if(cache.containsKey(name) == false) {
+            return false;
+        }
         final Path path = repositoryFolder.resolve(name + ".cliqui");
-        return Files.deleteIfExists(path);
+        if(Files.deleteIfExists(path)) {
+            cache.remove(name);
+            return true;
+        }
+        return false;
     }
     
     /**
@@ -76,7 +85,11 @@ public final class CLIEntryRepository {
         return CLIBuilder.fromFile(fileToValidate);
     }
     
-    private void load() throws IOException {
+    public void load() throws IOException {
+        cache.clear();
+        if(Files.exists(repositoryFolder) == false) {
+            return;
+        }
         DirectoryStream<Path> directoryStream = Files.newDirectoryStream(repositoryFolder, new DirectoryStream.Filter<Path>() {
 
             @Override
