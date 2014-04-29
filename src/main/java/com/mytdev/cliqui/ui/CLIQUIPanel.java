@@ -19,6 +19,7 @@ import com.mytdev.cliqui.CLIQUI;
 import com.mytdev.cliqui.cli.Argument;
 import com.mytdev.cliqui.cli.Option;
 import com.mytdev.cliqui.spi.CommandLineElementsUI;
+import com.mytdev.cliqui.swing.SwingChangeSupport;
 import com.mytdev.cliqui.util.MessageConsole;
 import java.awt.BorderLayout;
 import java.awt.Color;
@@ -28,6 +29,8 @@ import javax.swing.JFileChooser;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.SwingUtilities;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -38,10 +41,12 @@ import lombok.extern.slf4j.Slf4j;
 public class CLIQUIPanel extends javax.swing.JPanel {
 
     private final CLIQUI<JPanel> cliqui;
-    
+
     private File workingDirectory = new File("").getAbsoluteFile();
-    
+
     private final JFileChooser fileChooser = new JFileChooser();
+
+    private boolean running = false;
 
     public CLIQUIPanel(CLIQUI<JPanel> cliqui) {
         this.cliqui = cliqui;
@@ -62,6 +67,31 @@ public class CLIQUIPanel extends javax.swing.JPanel {
         fileChooser.setMultiSelectionEnabled(false);
         fileChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
         workingDirectoryField.setText(workingDirectory.getAbsolutePath());
+        ((SwingChangeSupport) optionsUI.getChangeSupport()).addListener(new ChangeListener() {
+
+            @Override
+            public void stateChanged(ChangeEvent e) {
+                validateCommandLineElementsUI(optionsUI);
+            }
+        });
+        ((SwingChangeSupport) argsUI.getChangeSupport()).addListener(new ChangeListener() {
+
+            @Override
+            public void stateChanged(ChangeEvent e) {
+                validateCommandLineElementsUI(argsUI);
+            }
+        });
+    }
+
+    private void validateCommandLineElementsUI(CommandLineElementsUI<?, JPanel> ui) {
+        try {
+            ui.validate();
+            messageLabel.setText(" ");
+            runButton.setEnabled(running == false);
+        } catch (IllegalArgumentException ex) {
+            messageLabel.setText(ex.getLocalizedMessage());
+            runButton.setEnabled(false);
+        }
     }
 
     /**
@@ -82,9 +112,10 @@ public class CLIQUIPanel extends javax.swing.JPanel {
         workingDirectoryLabel = new javax.swing.JLabel();
         workingDirectoryField = new javax.swing.JTextField();
         browseWorkingDirectoryButton = new javax.swing.JButton();
-        jLabel1 = new javax.swing.JLabel();
+        outputLabel = new javax.swing.JLabel();
         outputScrollPane = new javax.swing.JScrollPane();
         outputTextPane = new javax.swing.JTextPane();
+        messageLabel = new javax.swing.JLabel();
 
         execField.setFont(new java.awt.Font("Tahoma", 1, 11)); // NOI18N
         execField.setText("<<command>>");
@@ -149,10 +180,13 @@ public class CLIQUIPanel extends javax.swing.JPanel {
             }
         });
 
-        jLabel1.setText("Output");
+        outputLabel.setText("Output");
 
         outputTextPane.setEditable(false);
         outputScrollPane.setViewportView(outputTextPane);
+
+        messageLabel.setForeground(new java.awt.Color(204, 0, 0));
+        messageLabel.setText(" ");
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(this);
         this.setLayout(layout);
@@ -171,10 +205,11 @@ public class CLIQUIPanel extends javax.swing.JPanel {
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                         .addComponent(browseWorkingDirectoryButton))
                     .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
-                        .addGap(0, 0, Short.MAX_VALUE)
+                        .addComponent(messageLabel, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                        .addGap(18, 18, 18)
                         .addComponent(runButton))
                     .addGroup(layout.createSequentialGroup()
-                        .addComponent(jLabel1)
+                        .addComponent(outputLabel)
                         .addGap(0, 0, Short.MAX_VALUE))
                     .addComponent(outputScrollPane))
                 .addContainerGap())
@@ -194,16 +229,22 @@ public class CLIQUIPanel extends javax.swing.JPanel {
                     .addComponent(workingDirectoryField, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(browseWorkingDirectoryButton))
                 .addGap(18, 18, 18)
-                .addComponent(jLabel1)
+                .addComponent(outputLabel)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(outputScrollPane, javax.swing.GroupLayout.DEFAULT_SIZE, 95, Short.MAX_VALUE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                .addComponent(runButton)
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(runButton)
+                    .addComponent(messageLabel))
                 .addContainerGap())
         );
     }// </editor-fold>//GEN-END:initComponents
 
     private void runButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_runButtonActionPerformed
+        if (running) {
+            return;
+        }
+        running = true;
         try {
             outputTextPane.setText("");
             final Process process = new ProcessBuilder(cliqui.getCommandLineValue())
@@ -219,6 +260,10 @@ public class CLIQUIPanel extends javax.swing.JPanel {
                 public void run() {
                     try {
                         process.waitFor();
+                    } catch (InterruptedException ex) {
+                        log.error(ex.getLocalizedMessage(), ex);
+                    } finally {
+                        running = false;
                         SwingUtilities.invokeLater(new Runnable() {
 
                             @Override
@@ -226,8 +271,6 @@ public class CLIQUIPanel extends javax.swing.JPanel {
                                 runButton.setEnabled(true);
                             }
                         });
-                    } catch (InterruptedException ex) {
-                        log.error(ex.getLocalizedMessage(), ex);
                     }
                 }
             });
@@ -235,17 +278,18 @@ public class CLIQUIPanel extends javax.swing.JPanel {
             thread.start();
         } catch (IOException ex) {
             log.error(ex.getLocalizedMessage(), ex);
-            JOptionPane.showMessageDialog(this, 
-                    ex.getLocalizedMessage(), 
-                    "Error", 
+            JOptionPane.showMessageDialog(this,
+                    ex.getLocalizedMessage(),
+                    "Error",
                     JOptionPane.ERROR_MESSAGE);
             runButton.setEnabled(true);
+            running = false;
         }
     }//GEN-LAST:event_runButtonActionPerformed
 
     private void browseWorkingDirectoryButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_browseWorkingDirectoryButtonActionPerformed
         fileChooser.setSelectedFile(workingDirectory);
-        if(fileChooser.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
+        if (fileChooser.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
             workingDirectory = fileChooser.getSelectedFile();
             workingDirectoryField.setText(workingDirectory.getAbsolutePath());
         }
@@ -257,9 +301,10 @@ public class CLIQUIPanel extends javax.swing.JPanel {
     private javax.swing.JPanel argsPanel;
     private javax.swing.JButton browseWorkingDirectoryButton;
     private javax.swing.JLabel execField;
-    private javax.swing.JLabel jLabel1;
+    private javax.swing.JLabel messageLabel;
     private javax.swing.JPanel optionsInnerPanel;
     private javax.swing.JPanel optionsPanel;
+    private javax.swing.JLabel outputLabel;
     private javax.swing.JScrollPane outputScrollPane;
     private javax.swing.JTextPane outputTextPane;
     private javax.swing.JButton runButton;

@@ -286,6 +286,7 @@ public class ImportCLIDialog extends javax.swing.JDialog {
             if(nameField.getText().isEmpty()) {
                 nameField.setText(selectedFile.getName().replaceAll("\\.\\w+$", ""));
             }
+            updateOkButtonState();
         }
     }//GEN-LAST:event_browseButtonActionPerformed
 

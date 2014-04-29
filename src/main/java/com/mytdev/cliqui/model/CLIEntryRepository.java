@@ -38,8 +38,6 @@ public final class CLIEntryRepository {
 
     private final Map<String, CLIEntry> cache = new HashMap<>();
     
-    private boolean loaded = false;
-    
     public CLIEntryRepository(Path repositoryFolder) {
         this.repositoryFolder = repositoryFolder;
     }
@@ -51,6 +49,7 @@ public final class CLIEntryRepository {
             Files.createDirectories(repositoryFolder);
         }
         Files.copy(fileToImport.toPath(), dest);
+        cache.put(name, entry);
         return entry;
     }
     
@@ -101,6 +100,5 @@ public final class CLIEntryRepository {
             final String name = path.getFileName().toString().replaceAll("\\.cliqui$", "");
             cache.put(name, new CLIEntry(name, CLIBuilder.fromFile(path.toFile())));
         }
-        loaded = true;
     }
 }

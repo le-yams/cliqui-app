@@ -149,11 +149,12 @@ public class CLIQUIFrame extends javax.swing.JFrame {
                     "confirmation",
                     JOptionPane.YES_NO_OPTION);
                 if (cliEntryRepository.removeEntry(entryName)) {
-                    cliListModel.removeEntry(index);
                     final CLIQUIPanel panel = panels.get(entryName);
                     if (panel != null) {
                         tabbedPane.remove(panel);
+                        panels.remove(entryName);
                     }
+                    cliListModel.removeEntry(index);
                 }
             } catch (IOException ex) {
                 log.error(ex.getLocalizedMessage(), ex);
