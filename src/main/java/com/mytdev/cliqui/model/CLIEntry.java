@@ -23,13 +23,17 @@ import lombok.Getter;
  *
  * @author Yann D'Isanto
  */
-@Getter
 @AllArgsConstructor
 public final class CLIEntry {
 
+    @Getter
     private final String name;
 
     private final CLI cli;
+
+    public CLI getCLI() {
+        return cli;
+    }
 
     @Override
     public String toString() {

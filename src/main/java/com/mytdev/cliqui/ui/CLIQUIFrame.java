@@ -15,6 +15,7 @@
  */
 package com.mytdev.cliqui.ui;
 
+import com.mytdev.cliqui.CLIQUI;
 import com.mytdev.cliqui.model.CLIEntry;
 import com.mytdev.cliqui.model.CLIEntryRepository;
 import com.mytdev.cliqui.resources.Images;
@@ -72,7 +73,7 @@ public class CLIQUIFrame extends javax.swing.JFrame {
         final String name = entry.getName();
         CLIQUIPanel panel = panels.get(name);
         if (panel == null) {
-            panel = new CLIQUIPanel(entry.getCli());
+            panel = new CLIQUIPanel(CLIQUI.swing(entry.getCLI()));
             panels.put(name, panel);
             tabbedPane.addTab(name, panel);
             final int index = tabbedPane.indexOfComponent(panel);

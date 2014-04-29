@@ -15,7 +15,6 @@
  */
 package com.mytdev.cliqui.ui;
 
-import com.mytdev.cliqui.CLI;
 import com.mytdev.cliqui.CLIQUI;
 import com.mytdev.cliqui.cli.Argument;
 import com.mytdev.cliqui.cli.Option;
@@ -25,10 +24,6 @@ import java.awt.BorderLayout;
 import java.awt.Color;
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import javax.swing.JFileChooser;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
@@ -42,19 +37,16 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class CLIQUIPanel extends javax.swing.JPanel {
 
-    private final CLI cli;
-
     private final CLIQUI<JPanel> cliqui;
     
     private File workingDirectory = new File("").getAbsoluteFile();
     
     private final JFileChooser fileChooser = new JFileChooser();
 
-    public CLIQUIPanel(CLI cli) {
-        this.cli = cli;
-        this.cliqui = CLIQUI.swing(cli);
+    public CLIQUIPanel(CLIQUI<JPanel> cliqui) {
+        this.cliqui = cliqui;
         initComponents();
-        execField.setText(cli.getCommand());
+        execField.setText(cliqui.getCLI().getCommand());
         final CommandLineElementsUI<Option, JPanel> optionsUI = cliqui.getOptionsUI();
         final CommandLineElementsUI<Argument, JPanel> argsUI = cliqui.getArgumentsUI();
         if (optionsUI.getCommandLineElements().isEmpty()) {
@@ -212,14 +204,9 @@ public class CLIQUIPanel extends javax.swing.JPanel {
     }// </editor-fold>//GEN-END:initComponents
 
     private void runButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_runButtonActionPerformed
-        final List<String> commandLine = new ArrayList<>();
-        commandLine.add(cli.getCommand());
-        commandLine.addAll(cliqui.getOptionsUI().getCommandLineValue());
-        commandLine.addAll(cliqui.getArgumentsUI().getCommandLineValue());
-        runButton.setEnabled(false);
         try {
             outputTextPane.setText("");
-            final Process process = new ProcessBuilder(commandLine)
+            final Process process = new ProcessBuilder(cliqui.getCommandLineValue())
                     .directory(workingDirectory)
                     .start();
             process.getOutputStream().close();
